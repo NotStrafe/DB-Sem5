@@ -132,12 +132,12 @@ CREATE INDEX idx_messages_author  ON messages(author_id);
 INSERT INTO users
   (username, full_name, email, password_hash, country, city, timezone, is_active, created_at)
 VALUES
-  ('mentor_anna',  'Anna Petrova',     'anna@example.com',    'hash_anna',  'Russia',   'Moscow',      'UTC+3', TRUE,  '2023-12-01 10:00'),
-  ('mentor_ivan',  'Ivan Korolev',     'ivan@example.com',    'hash_ivan',  'Russia',   'Saint-Petersburg', 'UTC+3', TRUE,  '2023-12-02 11:20'),
-  ('mentor_lucas', 'Lucas Meyer',      'lucas@example.com',   'hash_lucas', 'Germany',  'Berlin',      'UTC+1', TRUE,  '2023-12-05 09:10'),
-  ('mentee_alex',  'Alex Kim',         'alex@example.com',    'hash_alex',  'USA',      'Austin',      'UTC-6', TRUE,  '2024-01-02 15:00'),
-  ('mentee_daria', 'Daria Voronina',   'daria@example.com',   'hash_daria', 'Kazakhstan','Almaty',     'UTC+6', TRUE,  '2024-01-03 18:20'),
-  ('mentee_yuki',  'Yuki Tanaka',      'yuki@example.com',    'hash_yuki',  'Japan',    'Tokyo',       'UTC+9', TRUE,  '2024-01-05 08:30');
+  ('mentor_anna',  'Anna Petrova',     'anna@example.com',    'hash_anna',  'Russia',   'Moscow',      'UTC+3', TRUE,  TIMESTAMP '2023-12-01 10:00'),
+  ('mentor_ivan',  'Ivan Korolev',     'ivan@example.com',    'hash_ivan',  'Russia',   'Saint-Petersburg', 'UTC+3', TRUE,  TIMESTAMP '2023-12-02 11:20'),
+  ('mentor_lucas', 'Lucas Meyer',      'lucas@example.com',   'hash_lucas', 'Germany',  'Berlin',      'UTC+1', TRUE,  TIMESTAMP '2023-12-05 09:10'),
+  ('mentee_alex',  'Alex Kim',         'alex@example.com',    'hash_alex',  'USA',      'Austin',      'UTC-6', TRUE,  TIMESTAMP '2024-01-02 15:00'),
+  ('mentee_daria', 'Daria Voronina',   'daria@example.com',   'hash_daria', 'Kazakhstan','Almaty',     'UTC+6', TRUE,  TIMESTAMP '2024-01-03 18:20'),
+  ('mentee_yuki',  'Yuki Tanaka',      'yuki@example.com',    'hash_yuki',  'Japan',    'Tokyo',       'UTC+9', TRUE,  TIMESTAMP '2024-01-05 08:30');
 
 -- Навыки
 INSERT INTO skills (name, category, is_active) VALUES
@@ -202,27 +202,27 @@ WHERE u.username = 'mentee_yuki';
 -- Публичные офферы
 INSERT INTO mentor_offers
   (mentor_id, skill_id, hourly_rate, currency, format, language, note, status, created_at)
-SELECT u.user_id, s.skill_id, 80.00, 'USD', 'online', 'EN', 'Python backend for web services', 'active', '2024-01-04 12:00'
+SELECT u.user_id, s.skill_id, 80.00, 'USD', 'online', 'EN', 'Python backend for web services', 'active', TIMESTAMP '2024-01-04 12:00'
 FROM users u
 JOIN skills s ON s.name = 'Python Backend'
 WHERE u.username = 'mentor_anna'
 UNION ALL
-SELECT u.user_id, s.skill_id, 95.00, 'USD', 'online', 'EN', 'ML pipelines and metrics review', 'active', '2024-01-06 09:30'
+SELECT u.user_id, s.skill_id, 95.00, 'USD', 'online', 'EN', 'ML pipelines and metrics review', 'active', TIMESTAMP '2024-01-06 09:30'
 FROM users u
 JOIN skills s ON s.name = 'Data Science'
 WHERE u.username = 'mentor_anna'
 UNION ALL
-SELECT u.user_id, s.skill_id, 70.00, 'EUR', 'mixed', 'EN', 'DevOps culture and tooling', 'active', '2024-01-08 14:00'
+SELECT u.user_id, s.skill_id, 70.00, 'EUR', 'mixed', 'EN', 'DevOps culture and tooling', 'active', TIMESTAMP '2024-01-08 14:00'
 FROM users u
 JOIN skills s ON s.name = 'DevOps'
 WHERE u.username = 'mentor_ivan'
 UNION ALL
-SELECT u.user_id, s.skill_id, 85.00, 'EUR', 'online', 'EN', 'Product strategy deep dives', 'active', '2024-01-09 16:00'
+SELECT u.user_id, s.skill_id, 85.00, 'EUR', 'online', 'EN', 'Product strategy deep dives', 'active', TIMESTAMP '2024-01-09 16:00'
 FROM users u
 JOIN skills s ON s.name = 'Product Management'
 WHERE u.username = 'mentor_lucas'
 UNION ALL
-SELECT u.user_id, s.skill_id, 60.00, 'EUR', 'online', 'EN', 'Career pivots and leadership', 'paused', '2024-01-11 10:45'
+SELECT u.user_id, s.skill_id, 60.00, 'EUR', 'online', 'EN', 'Career pivots and leadership', 'paused', TIMESTAMP '2024-01-11 10:45'
 FROM users u
 JOIN skills s ON s.name = 'Career Coaching'
 WHERE u.username = 'mentor_lucas';
@@ -231,7 +231,7 @@ WHERE u.username = 'mentor_lucas';
 INSERT INTO bookings
   (offer_id, mentee_id, starts_at, ends_at, status, price_total, currency, created_at)
 SELECT o.offer_id, mentee.user_id, TIMESTAMP '2024-01-10 09:00', TIMESTAMP '2024-01-10 10:30',
-       'completed', 120.00, o.currency, '2024-01-05 10:00'
+       'completed', 120.00, o.currency, TIMESTAMP '2024-01-05 10:00'
 FROM mentor_offers o
 JOIN users mentor ON mentor.user_id = o.mentor_id
 JOIN users mentee ON mentee.username = 'mentee_alex'
@@ -239,7 +239,7 @@ JOIN skills s ON s.skill_id = o.skill_id
 WHERE mentor.username = 'mentor_anna' AND s.name = 'Python Backend'
 UNION ALL
 SELECT o.offer_id, mentee.user_id, TIMESTAMP '2024-02-05 18:00', TIMESTAMP '2024-02-05 19:00',
-       'approved', 95.00, o.currency, '2024-01-22 12:10'
+       'approved', 95.00, o.currency, TIMESTAMP '2024-01-22 12:10'
 FROM mentor_offers o
 JOIN users mentor ON mentor.user_id = o.mentor_id
 JOIN users mentee ON mentee.username = 'mentee_daria'
@@ -247,7 +247,7 @@ JOIN skills s ON s.skill_id = o.skill_id
 WHERE mentor.username = 'mentor_anna' AND s.name = 'Data Science'
 UNION ALL
 SELECT o.offer_id, mentee.user_id, TIMESTAMP '2024-02-12 11:00', TIMESTAMP '2024-02-12 12:30',
-       'completed', 105.00, o.currency, '2024-01-25 15:40'
+       'completed', 105.00, o.currency, TIMESTAMP '2024-01-25 15:40'
 FROM mentor_offers o
 JOIN users mentor ON mentor.user_id = o.mentor_id
 JOIN users mentee ON mentee.username = 'mentee_yuki'
@@ -255,7 +255,7 @@ JOIN skills s ON s.skill_id = o.skill_id
 WHERE mentor.username = 'mentor_ivan' AND s.name = 'DevOps'
 UNION ALL
 SELECT o.offer_id, mentee.user_id, TIMESTAMP '2024-03-03 15:00', TIMESTAMP '2024-03-03 16:00',
-       'pending', 85.00, o.currency, '2024-02-15 09:05'
+       'pending', 85.00, o.currency, TIMESTAMP '2024-02-15 09:05'
 FROM mentor_offers o
 JOIN users mentor ON mentor.user_id = o.mentor_id
 JOIN users mentee ON mentee.username = 'mentee_alex'
@@ -263,7 +263,7 @@ JOIN skills s ON s.skill_id = o.skill_id
 WHERE mentor.username = 'mentor_lucas' AND s.name = 'Product Management'
 UNION ALL
 SELECT o.offer_id, mentee.user_id, TIMESTAMP '2024-03-07 08:00', TIMESTAMP '2024-03-07 09:30',
-       'cancelled', 90.00, o.currency, '2024-02-20 10:15'
+       'cancelled', 90.00, o.currency, TIMESTAMP '2024-02-20 10:15'
 FROM mentor_offers o
 JOIN users mentor ON mentor.user_id = o.mentor_id
 JOIN users mentee ON mentee.username = 'mentee_daria'
@@ -273,17 +273,17 @@ WHERE mentor.username = 'mentor_lucas' AND s.name = 'Career Coaching';
 -- Сессии
 INSERT INTO sessions
   (booking_id, actual_started_at, actual_ended_at, duration_min, status, created_at)
-SELECT b.booking_id, TIMESTAMP '2024-01-10 09:05', TIMESTAMP '2024-01-10 10:32', 87, 'completed', '2024-01-10 10:35'
+SELECT b.booking_id, TIMESTAMP '2024-01-10 09:05', TIMESTAMP '2024-01-10 10:32', 87, 'completed', TIMESTAMP '2024-01-10 10:35'
 FROM bookings b
 JOIN users mentee ON mentee.user_id = b.mentee_id
 WHERE mentee.username = 'mentee_alex' AND b.starts_at = TIMESTAMP '2024-01-10 09:00'
 UNION ALL
-SELECT b.booking_id, TIMESTAMP '2024-02-12 11:05', TIMESTAMP '2024-02-12 12:20', 75, 'completed', '2024-02-12 12:30'
+SELECT b.booking_id, TIMESTAMP '2024-02-12 11:05', TIMESTAMP '2024-02-12 12:20', 75, 'completed', TIMESTAMP '2024-02-12 12:30'
 FROM bookings b
 JOIN users mentee ON mentee.user_id = b.mentee_id
 WHERE mentee.username = 'mentee_yuki' AND b.starts_at = TIMESTAMP '2024-02-12 11:00'
 UNION ALL
-SELECT b.booking_id, TIMESTAMP '2024-03-07 08:00', TIMESTAMP '2024-03-07 08:05', 5, 'cancelled', '2024-03-07 08:05'
+SELECT b.booking_id, TIMESTAMP '2024-03-07 08:00', TIMESTAMP '2024-03-07 08:05', 5, 'cancelled', TIMESTAMP '2024-03-07 08:05'
 FROM bookings b
 JOIN users mentee ON mentee.user_id = b.mentee_id
 WHERE mentee.username = 'mentee_daria' AND b.starts_at = TIMESTAMP '2024-03-07 08:00';
@@ -291,7 +291,7 @@ WHERE mentee.username = 'mentee_daria' AND b.starts_at = TIMESTAMP '2024-03-07 0
 -- Отзывы
 INSERT INTO session_feedbacks
   (session_id, author_id, target_id, rating, comment, created_at)
-SELECT s.session_id, mentee.user_id, mentor.user_id, 5, 'Отличный код-ревью и рекомендации.', '2024-01-10 12:00'
+SELECT s.session_id, mentee.user_id, mentor.user_id, 5, 'Отличный код-ревью и рекомендации.', TIMESTAMP '2024-01-10 12:00'
 FROM sessions s
 JOIN bookings b ON b.booking_id = s.booking_id
 JOIN mentor_offers o ON o.offer_id = b.offer_id
@@ -299,7 +299,7 @@ JOIN users mentor ON mentor.user_id = o.mentor_id
 JOIN users mentee ON mentee.user_id = b.mentee_id
 WHERE mentee.username = 'mentee_alex' AND b.starts_at = TIMESTAMP '2024-01-10 09:00'
 UNION ALL
-SELECT s.session_id, mentor.user_id, mentee.user_id, 4, 'Домашнее задание выполнено хорошо.', '2024-01-10 12:10'
+SELECT s.session_id, mentor.user_id, mentee.user_id, 4, 'Домашнее задание выполнено хорошо.', TIMESTAMP '2024-01-10 12:10'
 FROM sessions s
 JOIN bookings b ON b.booking_id = s.booking_id
 JOIN mentor_offers o ON o.offer_id = b.offer_id
@@ -307,7 +307,7 @@ JOIN users mentor ON mentor.user_id = o.mentor_id
 JOIN users mentee ON mentee.user_id = b.mentee_id
 WHERE mentee.username = 'mentee_alex' AND b.starts_at = TIMESTAMP '2024-01-10 09:00'
 UNION ALL
-SELECT s.session_id, mentee.user_id, mentor.user_id, 5, 'Полезные практики автоматизации.', '2024-02-12 15:00'
+SELECT s.session_id, mentee.user_id, mentor.user_id, 5, 'Полезные практики автоматизации.', TIMESTAMP '2024-02-12 15:00'
 FROM sessions s
 JOIN bookings b ON b.booking_id = s.booking_id
 JOIN mentor_offers o ON o.offer_id = b.offer_id
@@ -317,24 +317,24 @@ WHERE mentee.username = 'mentee_yuki' AND b.starts_at = TIMESTAMP '2024-02-12 11
 
 -- Сообщения
 INSERT INTO messages (booking_id, author_id, body, created_at)
-SELECT b.booking_id, mentee.user_id, 'Здравствуйте! Хочу обсудить архитектуру.', '2024-01-08 09:00'
+SELECT b.booking_id, mentee.user_id, 'Здравствуйте! Хочу обсудить архитектуру.', TIMESTAMP '2024-01-08 09:00'
 FROM bookings b
 JOIN users mentee ON mentee.user_id = b.mentee_id
 WHERE mentee.username = 'mentee_alex' AND b.starts_at = TIMESTAMP '2024-01-10 09:00'
 UNION ALL
-SELECT b.booking_id, mentor.user_id, 'Принято, подготовлю материалы.', '2024-01-08 12:00'
+SELECT b.booking_id, mentor.user_id, 'Принято, подготовлю материалы.', TIMESTAMP '2024-01-08 12:00'
 FROM bookings b
 JOIN mentor_offers o ON o.offer_id = b.offer_id
 JOIN users mentor ON mentor.user_id = o.mentor_id
 JOIN users mentee ON mentee.user_id = b.mentee_id
 WHERE mentee.username = 'mentee_alex' AND b.starts_at = TIMESTAMP '2024-01-10 09:00'
 UNION ALL
-SELECT b.booking_id, mentee.user_id, 'Можем перенести созвон?', '2024-02-27 08:00'
+SELECT b.booking_id, mentee.user_id, 'Можем перенести созвон?', TIMESTAMP '2024-02-27 08:00'
 FROM bookings b
 JOIN users mentee ON mentee.user_id = b.mentee_id
 WHERE mentee.username = 'mentee_daria' AND b.starts_at = TIMESTAMP '2024-03-07 08:00'
 UNION ALL
-SELECT b.booking_id, mentor.user_id, 'Боюсь, что придётся отменить.', '2024-02-28 09:15'
+SELECT b.booking_id, mentor.user_id, 'Боюсь, что придётся отменить.', TIMESTAMP '2024-02-28 09:15'
 FROM bookings b
 JOIN mentor_offers o ON o.offer_id = b.offer_id
 JOIN users mentor ON mentor.user_id = o.mentor_id
