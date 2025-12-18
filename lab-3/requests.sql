@@ -105,9 +105,9 @@ LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
   SELECT m.user_id,
-         m.username,
-         COUNT(DISTINCT b.booking_id) AS total_bookings,
-         COUNT(DISTINCT s.session_id) FILTER (WHERE s.status = 'completed') AS completed_sessions,
+         m.username::text,
+         COUNT(DISTINCT b.booking_id)::int AS total_bookings,
+         COUNT(DISTINCT s.session_id) FILTER (WHERE s.status = 'completed')::int AS completed_sessions,
          COALESCE(SUM(b.price_total) FILTER (WHERE b.status IN ('approved','completed')), 0) AS revenue_total,
          ROUND(AVG(f.rating)::numeric, 2) AS avg_rating
   FROM users m
@@ -143,7 +143,7 @@ BEGIN
 
   INSERT INTO messages (booking_id, author_id, body)
   SELECT b.booking_id, o.mentor_id,
-         format('Статус оффера % изменён на % в %', p_offer_id, p_new_status, now())
+         format('Статус оффера %s изменён на %s в %s', p_offer_id::text, p_new_status, to_char(now(), 'YYYY-MM-DD HH24:MI:SS'))
   FROM bookings b
   JOIN mentor_offers o ON o.offer_id = b.offer_id
   WHERE o.offer_id = p_offer_id
@@ -228,14 +228,50 @@ FOR EACH ROW EXECUTE FUNCTION trg_fn_feedbacks_rating_cache();
 -- 3. Примеры использования -----------------------------------------------------------
 
 -- 3.1 Создаём бронирование с помощью функции (50 минут DevOps)
-SELECT fn_create_booking(
-  p_offer_id => (SELECT offer_id FROM mentor_offers o JOIN users u ON u.user_id = o.mentor_id
-                 JOIN skills s ON s.skill_id = o.skill_id
-                 WHERE u.username = 'mentor_ivan' AND s.name = 'DevOps' LIMIT 1),
-  p_mentee_username => 'mentee_alex',
-  p_starts_at => TIMESTAMP '2024-04-01 09:00',
-  p_duration_min => 50
-) AS new_booking_id;
+DO $$
+DECLARE
+  v_offer_id BIGINT;
+  v_existing_booking BIGINT;
+  v_new_booking BIGINT;
+  v_start_time CONSTANT TIMESTAMP := TIMESTAMP '2024-04-01 09:00';
+  v_duration_min CONSTANT INTEGER := 50;
+BEGIN
+  SELECT o.offer_id
+  INTO v_offer_id
+  FROM mentor_offers o
+  JOIN users u ON u.user_id = o.mentor_id
+  JOIN skills s ON s.skill_id = o.skill_id
+  WHERE u.username = 'mentor_ivan' AND s.name = 'DevOps'
+  LIMIT 1;
+
+  IF v_offer_id IS NULL THEN
+    RAISE NOTICE 'Не найден DevOps оффер для mentor_ivan — пропускаем пример 3.1.';
+    RETURN;
+  END IF;
+
+  SELECT b.booking_id
+  INTO v_existing_booking
+  FROM bookings b
+  JOIN users mentee ON mentee.user_id = b.mentee_id
+  WHERE mentee.username = 'mentee_alex'
+    AND tsrange(b.starts_at, b.ends_at) && tsrange(v_start_time, v_start_time + (v_duration_min || ' minutes')::interval)
+    AND b.status IN ('pending','approved','completed')
+  ORDER BY b.booking_id DESC
+  LIMIT 1;
+
+  IF v_existing_booking IS NOT NULL THEN
+    RAISE NOTICE 'Бронирование уже существует (id=%) — пример 3.1 пропущен.', v_existing_booking;
+  ELSE
+    v_new_booking := fn_create_booking(
+      p_offer_id => v_offer_id,
+      p_mentee_username => 'mentee_alex',
+      p_starts_at => v_start_time,
+      p_duration_min => v_duration_min
+    );
+    RAISE NOTICE 'Создано бронирование % в рамках примера 3.1.', v_new_booking;
+  END IF;
+END;
+$$;
 
 -- 3.2 Попытка создать пересекающееся бронирование — ожидаем ошибку бизнес-логики
 DO $$
@@ -248,14 +284,28 @@ BEGIN
     p_duration_min => 30);
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Ожидаемая ошибка: %', SQLERRM;
-END;$$;
+END;
+$$;
 
 -- 3.3 Смена статуса оффера
-CALL sp_update_offer_status(
-  p_offer_id => (SELECT offer_id FROM mentor_offers o JOIN users u ON u.user_id = o.mentor_id
-                 WHERE u.username = 'mentor_lucas' AND o.status <> 'archived' LIMIT 1),
-  p_new_status => 'paused'
-);
+DO $$
+DECLARE
+  v_offer_id BIGINT;
+BEGIN
+  SELECT o.offer_id
+  INTO v_offer_id
+  FROM mentor_offers o
+  JOIN users u ON u.user_id = o.mentor_id
+  WHERE u.username = 'mentor_lucas' AND o.status <> 'archived'
+  LIMIT 1;
+
+  IF v_offer_id IS NULL THEN
+    RAISE NOTICE 'Нет подходящего оффера для обновления статуса.';
+  ELSE
+    CALL sp_update_offer_status(p_offer_id => v_offer_id, p_new_status => 'paused');
+  END IF;
+END;
+$$;
 
 -- 3.4 Добавление сообщения и проверка аудита
 INSERT INTO messages (booking_id, author_id, body)
@@ -272,7 +322,8 @@ SELECT s.session_id, b.mentee_id, o.mentor_id, 4, 'Полезная новая �
 FROM sessions s
 JOIN bookings b ON b.booking_id = s.booking_id
 JOIN mentor_offers o ON o.offer_id = b.offer_id
-ORDER BY s.session_id DESC LIMIT 1;
+ORDER BY s.session_id DESC LIMIT 1
+ON CONFLICT (session_id, author_id) DO NOTHING;
 
 SELECT mentor_id, feedback_count, avg_rating FROM mentor_rating_cache;
 
